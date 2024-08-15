@@ -6,7 +6,7 @@ from app.crud.crud_library import library as crud_library
 
 def test_create_document(db):
     # First, create a library
-    library_data = {"name": "Test Library", "document_metadata": {}}
+    library_data = {"name": "Test Library", "library_metadata": {"description": "A test library"}}
     db_library = crud_library.create(db, obj_in=library_data)
 
     document_data = {
@@ -16,12 +16,12 @@ def test_create_document(db):
     }
     db_document = crud_document.create(db, obj_in=document_data)
     assert db_document.title == "Test Document"
-    assert db_document.metadata == {"author": "Test Author"}
+    assert db_document.document_metadata == {"author": "Test Author"}
     assert db_document.library_id == db_library.id
 
 def test_get_document(db):
     # Create library and document
-    library = crud_library.create(db, obj_in={"name": "Test Library", "document_metadata": {}})
+    library = crud_library.create(db, obj_in={"name": "Test Library", "library_metadata": {"description": "A test library"}})
     document_data = {"title": "Test Document", "document_metadata": {}, "library_id": library.id}
     created_document = crud_document.create(db, obj_in=document_data)
 
@@ -31,7 +31,7 @@ def test_get_document(db):
 
 def test_update_document(db):
     # Create library and document
-    library = crud_library.create(db, obj_in={"name": "Test Library", "document_metadata": {}})
+    library = crud_library.create(db, obj_in={"name": "Test Library", "library_metadata": {"description": "A test library"}})
     document_data = {"title": "Test Document", "document_metadata": {}, "library_id": library.id}
     db_document = crud_document.create(db, obj_in=document_data)
 
@@ -42,7 +42,7 @@ def test_update_document(db):
 
 def test_delete_document(db):
     # Create library and document
-    library = crud_library.create(db, obj_in={"name": "Test Library", "document_metadata": {}})
+    library = crud_library.create(db, obj_in={"name": "Test Library", "library_metadata": {"description": "A test library"}})
     document_data = {"title": "Test Document", "document_metadata": {}, "library_id": library.id}
     db_document = crud_document.create(db, obj_in=document_data)
 
@@ -52,7 +52,7 @@ def test_delete_document(db):
 
 def test_document_library_relationship(db):
     # Create library and document
-    library = crud_library.create(db, obj_in={"name": "Test Library", "document_metadata": {}})
+    library = crud_library.create(db, obj_in={"name": "Test Library", "library_metadata": {"description": "A test library"}})
     document_data = {"title": "Test Document", "document_metadata": {}, "library_id": library.id}
     db_document = crud_document.create(db, obj_in=document_data)
 
