@@ -3,3 +3,10 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+
+/app/api/README.md
+/app/core/README.md
+/app/models/README.md
+/app/schemas/README.md
+/app/db/README.md
+/app/services/README.md
