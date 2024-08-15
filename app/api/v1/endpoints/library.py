@@ -9,4 +9,4 @@ router = APIRouter()
 
 @router.post("/", response_model=LibrarySchema)
 def create_library(library_in: LibraryCreate, db: Session = Depends(get_db)):
-    return library.create(db=db, obj_in=library_in.dict())
+    return library.create(db=db, obj_in=library_in.model_dump())

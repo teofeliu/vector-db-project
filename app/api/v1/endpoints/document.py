@@ -10,4 +10,4 @@ router = APIRouter()
 @router.post("/", response_model=DocumentResponse)
 def create_document(document: DocumentCreate, db: Session = Depends(get_db)):
     vector_db_service = VectorDBService()
-    return vector_db_service.create_document(db, document.dict())
+    return vector_db_service.create_document(db, document.model_dump())

@@ -2,12 +2,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.base import get_db
-from app.services.vector_db import VectorDBService
-from app.schemas.chunk import ChunkCreate, ChunkResponse
+from app.crud.crud_chunk import chunk
 
 router = APIRouter()
 
-@router.post("/", response_model=ChunkResponse)
-def create_chunk(chunk: ChunkCreate, db: Session = Depends(get_db)):
-    vector_db_service = VectorDBService()
-    return vector_db_service.create_chunk(db, chunk.dict())
+@router.get("/{chunk_id}")
+def read_chunk(chunk_id: int, db: Session = Depends(get_db)):
+    return chunk.get(db, id=chunk_id)
+
+# You might want other endpoints like:
+# - GET /documents/{document_id}/chunks
+# - GET /search (for vector similarity search)
