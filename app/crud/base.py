@@ -11,7 +11,7 @@ class CRUDBase(Generic[ModelType]):
         self.model = model
 
     def get(self, db: Session, id: Any) -> Optional[ModelType]:
-        return db.query(self.model).filter(self.model.id == id).first()
+        return db.get(self.model, id)
 
     def create(self, db: Session, *, obj_in: Dict[str, Any]) -> ModelType:
         db_obj = self.model(**obj_in)
@@ -35,7 +35,7 @@ class CRUDBase(Generic[ModelType]):
         return db_obj
 
     def remove(self, db: Session, *, id: int) -> ModelType:
-        obj = db.query(self.model).get(id)
+        obj = db.get(self.model, id)
         db.delete(obj)
         db.commit()
         return obj
