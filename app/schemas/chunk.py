@@ -1,18 +1,16 @@
+# app/schemas/chunk.py
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
 class ChunkBase(BaseModel):
-    text: str
+    content: str
     embedding: List[float]
 
 class ChunkCreate(ChunkBase):
-    pass
-
-class ChunkResponse(ChunkBase):
-    pass
+    document_id: int
 
 class ChunkUpdate(BaseModel):
-    text: Optional[str] = None
+    content: Optional[str] = None
     embedding: Optional[List[float]] = None
 
 class Chunk(ChunkBase):

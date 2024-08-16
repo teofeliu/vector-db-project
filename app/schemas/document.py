@@ -1,22 +1,33 @@
+# app/schemas/document.py
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
+from typing import Optional, Dict, List
 
 class DocumentBase(BaseModel):
-    text: str
-    embedding: List[float]
+    title: str
+    content: str
+    document_metadata: Optional[Dict] = None
 
 class DocumentCreate(DocumentBase):
-    pass
-
-class DocumentResponse(DocumentBase):
-    pass
+    library_id: int
 
 class DocumentUpdate(BaseModel):
-    text: Optional[str] = None
-    embedding: Optional[List[float]] = None
+    title: Optional[str] = None
+    content: Optional[str] = None
+    document_metadata: Optional[Dict] = None
 
 class Document(DocumentBase):
     id: int
-    document_id: int
+    library_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+class DocumentWithChunks(Document):
+    chunks: List["ChunkInDocument"]
+
+class ChunkInDocument(BaseModel):
+    id: int
+    content: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+DocumentWithChunks.model_rebuild()
