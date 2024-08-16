@@ -5,7 +5,46 @@ from app.main import app
 
 client = TestClient(app)
 
-# write a create chunk (through api)
+def test_create_chunk():
+    response = client.post(
+        "/api/v1/chunks/",
+        json={"content": "Test chunk content", "embedding": [0.1, 0.2, 0.3], "document_id": 1}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["content"] == "Test chunk content"
+    assert data["embedding"] == [0.1, 0.2, 0.3]
+    assert data["document_id"] == 1
+    assert "id" in data
+
+def test_get_chunk():
+    # First, create a chunk
+    create_response = client.post(
+        "/api/v1/chunks/",
+        json={"content": "Test chunk to get", "embedding": [0.4, 0.5, 0.6], "document_id": 1}
+    )
+    created_chunk = create_response.json()
+    
+    # Now, get the chunk
+    response = client.get(f"/api/v1/chunks/{created_chunk['id']}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["content"] == "Test chunk to get"
+    assert data["id"] == created_chunk["id"]
+
+def test_get_all_chunks():
+    # Create a couple of chunks
+    client.post("/api/v1/chunks/", json={"content": "Chunk 1", "embedding": [0.1, 0.2, 0.3], "document_id": 1})
+    client.post("/api/v1/chunks/", json={"content": "Chunk 2", "embedding": [0.4, 0.5, 0.6], "document_id": 1})
+    
+    # Get all chunks
+    response = client.get("/api/v1/chunks/")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) >= 2
+    assert any(chunk["content"] == "Chunk 1" for chunk in data)
+    assert any(chunk["content"] == "Chunk 2" for chunk in data)
 
 def test_search_chunks():
     # First, add some chunks

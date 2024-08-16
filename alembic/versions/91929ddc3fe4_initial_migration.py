@@ -1,8 +1,8 @@
-"""Update document model and add chunk model
+"""Initial migration
 
-Revision ID: fb547f91a290
-Revises: c02e4a99c7b9
-Create Date: 2024-08-15 19:26:12.958857
+Revision ID: 91929ddc3fe4
+Revises: 
+Create Date: 2024-08-15 22:05:13.000889
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'fb547f91a290'
-down_revision: Union[str, None] = 'c02e4a99c7b9'
+revision: str = '91929ddc3fe4'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -41,7 +41,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_documents_title'), 'documents', ['title'], unique=False)
     op.create_table('chunks',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('content', sa.Text(), nullable=True),
+    sa.Column('content', sa.String(), nullable=True),
     sa.Column('embedding', sa.JSON(), nullable=True),
     sa.Column('document_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
