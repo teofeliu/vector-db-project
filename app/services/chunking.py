@@ -1,78 +1,96 @@
-# app/services/chunking.py
-import re
-from typing import List, Tuple
+import cohere
+from typing import List, Dict, Any
+from sqlalchemy.orm import Session
+from app.crud.crud_chunk import chunk as crud_chunk
 
 class ChunkingService:
-    def __init__(self, min_tokens: int = 300, max_tokens: int = 500, padding: int = 50):
-        self.min_tokens = min_tokens
-        self.max_tokens = max_tokens
-        self.padding = padding
+    def __init__(self, api_key: str):
+        self.co = cohere.Client(api_key=api_key)
 
-    def chunk_document(self, text: str) -> List[str]:
+    def tokenize(self, text: str) -> List[int]:
+        return self.co.tokenize(text=text, model="command-r").tokens
+
+    def detokenize(self, tokens: List[int]) -> str:
+        return self.co.detokenize(tokens=tokens, model="command-r").text
+
+    def generate_embedding(self, text: str) -> List[float]:
+        response = self.co.embed(texts=[text], model="embed-english-v2.0")
+        return response.embeddings[0]
+
+    def find_paragraph_end(self, tokens: List[int], start: int, end: int) -> int:
+        # Look for double newline tokens which often indicate paragraph breaks
+        for i in range(start, min(end, len(tokens) - 1)):
+            if tokens[i] == 198 and tokens[i+1] == 198:  # 198 is often the newline token
+                return i
+        return 0  # Return 0 if no paragraph end found
+
+    def find_sentence_end(self, tokens: List[int], start: int, end: int) -> int:
+        # Look for common sentence-ending punctuation tokens
+        sentence_end_tokens = [13, 14, 15]  # Example token IDs for '.', '!', '?'
+        for i in range(start, min(end, len(tokens))):
+            if tokens[i] in sentence_end_tokens:
+                return i + 1  # Return the position after the punctuation
+        return 0  # Return 0 if no sentence end found
+
+    def find_space(self, tokens: List[int], start: int, end: int) -> int:
+        # Look for space token
+        space_token = 1  # Example token ID for space
+        for i in range(start, min(end, len(tokens))):
+            if tokens[i] == space_token:
+                return i
+        return 0  # Return 0 if no space found
+
+    def find_chunk_end(self, tokens: List[int], start: int) -> int:
+        end = min(start + 500, len(tokens))
+        para_end = self.find_paragraph_end(tokens, start + 300, end)
+        if para_end:
+            return para_end
+        sent_end = self.find_sentence_end(tokens, start + 300, end)
+        if sent_end:
+            return sent_end
+        space = self.find_space(tokens, start + 300, end)
+        if space:
+            return space
+        return end  # If no suitable break point found, return the maximum end
+
+    def chunk_document(self, db: Session, document_id: int, text: str) -> List[Dict[str, Any]]:
+        tokens = self.tokenize(text)
         chunks = []
         start = 0
-        while start < len(text):
-            chunk, end = self._create_chunk(text, start)
-            chunks.append(chunk)
-            start = end  # Start at the end of the current chunk (excluding padding)
+        while start < len(tokens):
+            chunk_end = self.find_chunk_end(tokens, start)
+            if chunk_end <= start:
+                # Ensure we're always moving forward to prevent infinite loop
+                chunk_end = min(start + 500, len(tokens))
+            
+            padded_start = max(0, start - 50)
+            padded_end = min(len(tokens), chunk_end + 50)
+            chunk_tokens = tokens[padded_start:padded_end]
+            
+            # Detokenize to get the chunk text
+            chunk_text = self.detokenize(chunk_tokens)
+            
+            # Generate embedding
+            embedding = self.generate_embedding(chunk_text)
+            
+            # Create metadata
+            metadata = {
+                "start_index": padded_start,
+                "end_index": padded_end,
+                "length": padded_end - padded_start
+            }
+            
+            # Create and save Chunk object
+            chunk_data = {
+                "content": chunk_text,
+                "embedding": embedding,
+                "document_id": document_id,
+                "metadata": metadata
+            }
+            db_chunk = crud_chunk.create(db, obj_in=chunk_data)
+            chunks.append(db_chunk)
+            
+            # Move to next chunk
+            start = chunk_end
+
         return chunks
-
-    def _create_chunk(self, text: str, start: int) -> Tuple[str, int]:
-        # Define the primary window
-        window_start = start
-        window_end = min(start + self.max_tokens, len(text))
-
-        # Attempt to find the end of a paragraph
-        chunk_end = self._find_break(text, window_start, window_end, r'\n\s*\n', reverse=True)
-        
-        # If no paragraph end found, look for the end of a sentence
-        if not chunk_end or chunk_end < start + self.min_tokens:
-            chunk_end = self._find_break(text, window_start, window_end, r'[.!?]\s', reverse=True)
-
-        # If no sentence end found, look for a word break (space)
-        if not chunk_end or chunk_end < start + self.min_tokens:
-            chunk_end = self._find_break(text, window_start, window_end, r'\s', reverse=True)
-
-        # If no suitable break found, use the window end
-        if not chunk_end or chunk_end < start + self.min_tokens:
-            chunk_end = window_end
-
-        # Apply padding
-        chunk_start = max(0, start - self.padding)
-        chunk_end = min(len(text), chunk_end + self.padding)
-
-        return text[chunk_start:chunk_end], chunk_end
-
-    def _find_break(self, text: str, start: int, end: int, pattern: str, reverse: bool = False) -> int:
-        search_range = text[start:end]
-        matches = list(re.finditer(pattern, search_range))
-        
-        if matches:
-            # Return the last match if reverse is True, otherwise return the first match
-            match = matches[-1] if reverse else matches[0]
-            return start + match.end()
-        
-        return None
-
-    def _count_tokens(self, text: str) -> int:
-        # This is a simple tokenization. In a real-world scenario,
-        # you might want to use a more sophisticated tokenizer.
-        return len(text.split())
-
-# Usage example
-if __name__ == "__main__":
-    chunking_service = ChunkingService()
-    sample_text = """
-    This is a sample document. It contains multiple sentences and paragraphs.
-
-    This is the second paragraph. It also has multiple sentences. We'll use this to test our chunking algorithm.
-
-    Here's a third paragraph. It's a bit shorter.
-
-    And a final one for good measure. Let's see how our algorithm handles this text.
-    """
-    chunks = chunking_service.chunk_document(sample_text)
-    for i, chunk in enumerate(chunks):
-        print(f"Chunk {i + 1}:")
-        print(chunk)
-        print("-" * 50)
