@@ -1,12 +1,23 @@
 # app/schemas/chunk.py
-from pydantic import BaseModel, ConfigDict
-from typing import List
+from pydantic import BaseModel, ConfigDict, field_validator
+from typing import List, Union
 import json
 
 class ChunkBase(BaseModel):
     content: str
-    embedding: List[float]
+    embedding: Union[str, List[float]]
     document_id: int
+
+    @field_validator('embedding')
+    def validate_embedding(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                raise ValueError('Invalid JSON string for embedding')
+        elif isinstance(v, list):
+            return v
+        raise ValueError('Embedding must be a JSON string or a list of floats')
 
 class ChunkCreate(ChunkBase):
     pass
@@ -18,10 +29,3 @@ class Chunk(ChunkBase):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
-
-    @classmethod
-    def from_orm(cls, obj):
-        # Convert JSON string to list when reading from database
-        if isinstance(obj.embedding, str):
-            obj.embedding = json.loads(obj.embedding)
-        return super().from_orm(obj)

@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 from app.db.base import get_db
 from app.schemas.chunk import ChunkCreate, Chunk as ChunkSchema
 from app.services.vector_db import VectorDBService
@@ -25,6 +26,10 @@ def read_chunks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     chunks = vector_db_service.get_chunks(db, skip=skip, limit=limit)
     return chunks
 
+class SearchQuery(BaseModel):
+    query: List[float]
+    k: int = 5
+
 @router.post("/search", response_model=List[ChunkSchema])
-def search_chunks(query: List[float], k: int = 5, db: Session = Depends(get_db)):
-    return vector_db_service.search(db, query, k)
+def search_chunks(search_query: SearchQuery, db: Session = Depends(get_db)):
+    return vector_db_service.search(db, search_query.query, search_query.k)
