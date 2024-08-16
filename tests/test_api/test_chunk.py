@@ -50,6 +50,12 @@ def test_search_chunks(client):
     assert len(data) == 2
     assert data[0]["content"] == "Test content 1"
 
+    # Test with k greater than the number of chunks
+    response = client.post("/api/v1/chunks/search", json={"query": [1.0, 2.0, 3.0], "k": 5})
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3  # Should return all 3 chunks, not 5
+
 def test_search_chunks_empty_db(client):
     response = client.post("/api/v1/chunks/search", json={"query": [1.0, 2.0, 3.0], "k": 2})
     assert response.status_code == 200

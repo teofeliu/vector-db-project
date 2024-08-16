@@ -8,21 +8,20 @@ from app.schemas.chunk import ChunkCreate, Chunk as ChunkSchema
 from app.services.vector_db import VectorDBService
 
 router = APIRouter()
-vector_db_service = VectorDBService()
 
 @router.post("/", response_model=ChunkSchema)
-def create_chunk(chunk: ChunkCreate, db: Session = Depends(get_db)):
+def create_chunk(chunk: ChunkCreate, db: Session = Depends(get_db), vector_db_service: VectorDBService = Depends(VectorDBService)):
     return vector_db_service.add_chunk(db, chunk)
 
 @router.get("/{chunk_id}", response_model=ChunkSchema)
-def read_chunk(chunk_id: int, db: Session = Depends(get_db)):
+def read_chunk(chunk_id: int, db: Session = Depends(get_db), vector_db_service: VectorDBService = Depends(VectorDBService)):
     db_chunk = vector_db_service.get_chunk(db, chunk_id)
     if db_chunk is None:
         raise HTTPException(status_code=404, detail="Chunk not found")
     return db_chunk
 
 @router.get("/", response_model=List[ChunkSchema])
-def read_chunks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_chunks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), vector_db_service: VectorDBService = Depends(VectorDBService)):
     chunks = vector_db_service.get_chunks(db, skip=skip, limit=limit)
     return chunks
 
@@ -31,5 +30,5 @@ class SearchQuery(BaseModel):
     k: int = 5
 
 @router.post("/search", response_model=List[ChunkSchema])
-def search_chunks(search_query: SearchQuery, db: Session = Depends(get_db)):
+def search_chunks(search_query: SearchQuery, db: Session = Depends(get_db), vector_db_service: VectorDBService = Depends(VectorDBService)):
     return vector_db_service.search(db, search_query.query, search_query.k)

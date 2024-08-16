@@ -6,11 +6,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.main import app
-from app.db.base import get_db
+from app.services.vector_db import VectorDBService
 
 @pytest.fixture(scope="function")
 def test_db():
-    # Create an in-memory SQLite database for each test
     SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
@@ -28,13 +27,14 @@ def test_db():
         finally:
             db.close()
     
-    app.dependency_overrides[get_db] = override_get_db
-    
-    yield TestingSessionLocal
-    
-    Base.metadata.drop_all(bind=engine)
+    return override_get_db
 
 @pytest.fixture(scope="function")
-def client(test_db):
+def vector_db_service():
+    return VectorDBService()
+
+@pytest.fixture(scope="function")
+def client(test_db, vector_db_service):
+    app.dependency_overrides[VectorDBService] = lambda: vector_db_service
     with TestClient(app) as c:
         yield c

@@ -12,6 +12,7 @@ class BruteForceIndex:
         self.distance_func = distance_func
 
     def add(self, vector: List[float], id: int) -> None:
+        print("added:", self.vectors)
         self.vectors.append(np.array(vector))
         self.ids.append(id)
 
@@ -20,12 +21,11 @@ class BruteForceIndex:
         distances = [self.distance_func(v, query_vector) for v in self.vectors]
         indexed_distances = list(enumerate(distances))
         indexed_distances.sort(key=lambda x: x[1])
-        
         result = []
+
         for i in range(min(k, len(self.ids))):
             index, distance = indexed_distances[i]
             result.append((self.ids[index], distance))
-        
         return result
 
     def __len__(self) -> int:
