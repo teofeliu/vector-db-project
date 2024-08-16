@@ -12,7 +12,6 @@ class BruteForceIndex:
         self.distance_func = distance_func
 
     def add(self, vector: List[float], id: int) -> None:
-        print("added:", self.vectors)
         self.vectors.append(np.array(vector))
         self.ids.append(id)
 
