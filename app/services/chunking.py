@@ -40,18 +40,43 @@ class ChunkingService:
                 return i
         return 0  # Return 0 if no space found
 
-    def find_chunk_end(self, tokens: List[int], start: int) -> int:
-        end = min(start + 500, len(tokens))
-        para_end = self.find_paragraph_end(tokens, start + 300, end)
-        if para_end:
-            return para_end
-        sent_end = self.find_sentence_end(tokens, start + 300, end)
-        if sent_end:
-            return sent_end
-        space = self.find_space(tokens, start + 300, end)
-        if space:
-            return space
-        return end  # If no suitable break point found, return the maximum end
+def find_chunk_end(self, tokens: List[int], start: int) -> int:
+    max_end = min(start + 500, len(tokens))
+    min_end = start + 300
+
+    # Look for paragraph end
+    for i in range(max_end, min_end, -1):
+        if self.is_paragraph_end(tokens, i):
+            return i
+
+    # Look for sentence end
+    for i in range(max_end, min_end, -1):
+        if self.is_sentence_end(tokens, i):
+            return i
+
+    # Look for word boundary
+    for i in range(max_end, min_end, -1):
+        if self.is_word_boundary(tokens, i):
+            return i
+
+    # If no suitable break point found, return the maximum end
+    return max_end
+
+def is_paragraph_end(self, tokens: List[int], index: int) -> bool:
+    # Implement logic to check if this position is a paragraph end
+    # For example, check for double newline tokens
+    return index < len(tokens) - 1 and tokens[index] == 198 and tokens[index+1] == 198
+
+def is_sentence_end(self, tokens: List[int], index: int) -> bool:
+    # Implement logic to check if this position is a sentence end
+    # For example, check for period, question mark, or exclamation mark tokens
+    sentence_end_tokens = [13, 14, 15]  # Example token IDs for '.', '!', '?'
+    return tokens[index] in sentence_end_tokens
+
+def is_word_boundary(self, tokens: List[int], index: int) -> bool:
+    # Implement logic to check if this position is a word boundary
+    # For example, check for space token
+    return tokens[index] == 1  # Assuming 1 is the token ID for space
 
     def chunk_document(self, db: Session, document_id: int, text: str) -> List[Dict[str, Any]]:
         tokens = self.tokenize(text)
