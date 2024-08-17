@@ -1,42 +1,37 @@
-# app/services/vector_db.py
-from typing import List, Tuple, Type
 from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
+from app.schemas.chunk import ChunkCreate, Chunk as ChunkSchema
 from app.models.chunk import Chunk
-from app.schemas.chunk import ChunkCreate
 from app.services.indexing.brute_force import BruteForceIndex
 import json
 
 class VectorDBService:
-    def __init__(self, index_class: Type[BruteForceIndex] = BruteForceIndex):
-        self.index = index_class()
+    def __init__(self):
+        self.index = BruteForceIndex()
 
-    def add_chunk(self, db: Session, chunk_data: ChunkCreate) -> Chunk:
-        chunk_data_dict = chunk_data.model_dump()
-        embedding = chunk_data_dict['embedding']
-        if isinstance(embedding, str):
-            embedding = json.loads(embedding)
-        chunk_data_dict['embedding'] = json.dumps(embedding)
-        chunk = crud_chunk.create(db, obj_in=chunk_data_dict)
-        self.index.add(embedding, chunk.id)
-        return chunk
+    def add_chunk(self, db: Session, chunk_data: dict):
+        chunk_in = ChunkCreate(**chunk_data)
+        db_chunk = crud_chunk.create(db, obj_in=chunk_in)
+        self.index.add(chunk_in.embedding, db_chunk.id)
+        return db_chunk
 
-    def search(self, db: Session, query_vector: List[float], k: int) -> List[Chunk]:
-        results = self.index.search(query_vector, k)
-        chunk_ids = [id for id, _ in results]
-        chunks = crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
-        for chunk in chunks:
-            chunk.embedding = json.loads(chunk.embedding)
-        return chunks
-
-    def get_chunk(self, db: Session, chunk_id: int) -> Chunk:
+    def get_chunk(self, db: Session, chunk_id: int):
         chunk = crud_chunk.get(db, id=chunk_id)
         if chunk:
-            chunk.embedding = json.loads(chunk.embedding)
+            chunk.embedding = chunk.embedding_list
         return chunk
 
-    def get_chunks(self, db: Session, skip: int = 0, limit: int = 100) -> List[Chunk]:
+    def get_chunks(self, db: Session, skip: int = 0, limit: int = 100):
         chunks = crud_chunk.get_multi(db, skip=skip, limit=limit)
+        return chunks  # crud_chunk.get_multi now handles the limit correctly
+
+    def search(self, db: Session, query_vector: list, k: int = 5):
+        results = self.index.search(query_vector, k)
+        chunk_ids = [id for id, _ in results]
+        return crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
+
+    def rebuild_index(self, db: Session):
+        chunks = crud_chunk.get_multi(db)
+        self.index = BruteForceIndex()
         for chunk in chunks:
-            chunk.embedding = json.loads(chunk.embedding)
-        return chunks
+            self.index.add(chunk.embedding_list, chunk.id)

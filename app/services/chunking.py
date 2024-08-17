@@ -1,11 +1,15 @@
+#app/services/chunking.py
 import cohere
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
+from app.core.config import settings
 
 class ChunkingService:
-    def __init__(self, api_key: str):
-        self.co = cohere.Client(api_key=api_key)
+    def __init__(self):
+        if settings.COHERE_API_KEY is None:
+            raise ValueError("COHERE_API_KEY is not set in the environment")
+        self.co = cohere.Client(api_key=settings.COHERE_API_KEY)
 
     def tokenize(self, text: str) -> List[int]:
         return self.co.tokenize(text=text, model="command-r").tokens

@@ -6,8 +6,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./test.db"
     API_V1_STR: str = "/api/v1"
     TESTING: bool = False
-    COHERE_API_KEY: Optional[str] = None  # Correct syntax
+    COHERE_API_KEY: Optional[str] = None
 
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = Settings()
