@@ -1,8 +1,8 @@
 # app/services/vector_db.py
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
-from app.schemas.chunk import ChunkCreate, Chunk as ChunkSchema
+from app.schemas.chunk import ChunkCreate, ChunkResponse
 from app.models.chunk import Chunk
 from app.services.indexing.disk_based_vector_index import DiskBasedVectorIndex
 from app.services.embedding_service import EmbeddingService
@@ -19,7 +19,6 @@ class VectorDBService:
         chunk_data['embedding'] = json.dumps(embedding)
         db_chunk = crud_chunk.create(db, obj_in=chunk_data)
         self.index.add(embedding, db_chunk.id)
-        print("chunk added to vector db:", embedding[:10], db_chunk.id)
         return db_chunk
 
     def get_chunk(self, db: Session, chunk_id: int):
@@ -34,18 +33,28 @@ class VectorDBService:
             chunk.embedding = json.loads(chunk.embedding)
         return chunks[:limit]
 
-    def search(self, db: Session, query_text: str, k: int = 5):
+    def search(self, db: Session, query_text: str, k: int = 5) -> List[ChunkResponse]:
         query_vector = self.embedding_service.generate_embedding(query_text)
         results = self.index.search(query_vector, k)
         chunk_ids = [id for id, _ in results]
+        similarities = [similarity for _, similarity in results]
+        
         chunks = crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
         
-        # Ensure embeddings are stored as JSON strings
-        for chunk in chunks:
+        chunk_responses = []
+        for chunk, similarity in zip(chunks, similarities):
             if isinstance(chunk.embedding, list):
                 chunk.embedding = json.dumps(chunk.embedding)
+            chunk_response = ChunkResponse(
+                id=chunk.id,
+                content=chunk.content,
+                document_id=chunk.document_id,
+                chunk_metadata=chunk.chunk_metadata,
+                similarity=similarity
+            )
+            chunk_responses.append(chunk_response)
         
-        return chunks
+        return chunk_responses
 
     def rebuild_index(self, db: Session):
         chunks = crud_chunk.get_multi(db)

@@ -11,4 +11,18 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
+    # Chunking parameters
+    MIN_CHUNK_SIZE: int = 50
+    MAX_CHUNK_SIZE: int = 100
+    CHUNK_PADDING: int = 0
+    
+    # Vector search parameters
+    DEFAULT_SEARCH_RESULTS: int = 5
+    
+    # Index rebuilding
+    INDEX_REBUILD_BATCH_SIZE: int = 1000
+    
+    # Embedding model
+    EMBEDDING_MODEL: str = "embed-english-v2.0"
+
 settings = Settings()

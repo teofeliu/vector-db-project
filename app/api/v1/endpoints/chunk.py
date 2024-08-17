@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from app.db.base import get_db
-from app.schemas.chunk import ChunkCreate, Chunk as ChunkSchema
+from app.schemas.chunk import ChunkCreate, ChunkResponse as ChunkSchema
 from app.core.dependencies import get_vector_db_service
 from app.services.vector_db import VectorDBService
 from pydantic import BaseModel
