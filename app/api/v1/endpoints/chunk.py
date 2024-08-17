@@ -15,7 +15,7 @@ class SearchQuery(BaseModel):
 
 @router.post("/", response_model=ChunkSchema)
 def create_chunk(chunk: ChunkCreate, db: Session = Depends(get_db), vector_db_service: VectorDBService = Depends(VectorDBService)):
-    return vector_db_service.add_chunk(db, chunk.dict())
+    return vector_db_service.add_chunk(db, chunk.model_dump())
 
 @router.get("/{chunk_id}", response_model=ChunkSchema)
 def read_chunk(chunk_id: int, db: Session = Depends(get_db), vector_db_service: VectorDBService = Depends(VectorDBService)):

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import List
 import json
 
@@ -16,8 +16,7 @@ class ChunkUpdate(ChunkBase):
 class Chunk(ChunkBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator('embedding', mode='before')
     def validate_embedding(cls, v):
