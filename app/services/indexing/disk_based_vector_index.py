@@ -36,16 +36,19 @@ class DiskBasedVectorIndex:
         self.save_index()
     
     def cosine_similarity(self, vec1: np.ndarray, vec2: np.ndarray) -> float:
+        print("comparing q v:", vec1[:10], vec2[:10])
         dot_product = np.dot(vec1, vec2)
         norm_vec1 = np.linalg.norm(vec1)
         norm_vec2 = np.linalg.norm(vec2)
-        return dot_product / (norm_vec1 * norm_vec2)
+        result = dot_product / (norm_vec1 * norm_vec2)
+        print("res:", result)
+        return result
 
     def search(self, query: List[float], k: int) -> List[Tuple[int, float]]:
         query_vector = np.array(query, dtype=np.float32)
         similarities = np.array([self.cosine_similarity(query_vector, vec) for vec in self.vectors])
         nearest_indices = np.argsort(similarities)[-k:][::-1]
-        return [(self.metadata["ids"][i], similarities[i]) for i in nearest_indices]
+        return [(self.metadata["ids"][i], similarities[i]) for i in nearest_indices][::-1]
 
     def rebuild(self, vectors: List[List[float]], ids: List[int]):
         self.vectors = np.array(vectors, dtype=np.float32)

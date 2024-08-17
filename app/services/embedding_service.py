@@ -16,5 +16,6 @@ class EmbeddingService:
         return self.co.detokenize(tokens=tokens, model="command-r").text
 
     def generate_embedding(self, text: str) -> List[float]:
+        print("generate embedding of:", text[:30])
         response = self.co.embed(texts=[text], model="embed-english-v2.0")
         return response.embeddings[0]

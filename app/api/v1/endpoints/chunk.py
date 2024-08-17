@@ -32,9 +32,6 @@ def read_chunks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
 @router.post("/search", response_model=List[ChunkSchema])
 def search_chunks(search_query: SearchQuery, db: Session = Depends(get_db), vector_db_service: VectorDBService = Depends(get_vector_db_service)):
     results = vector_db_service.search(db, search_query.query, search_query.k)
-    for chunk in results:
-        print("embr:",type(chunk.embedding))
-        print('content:', chunk.content[:50])
     return results
 
 @router.post("/rebuild-index")

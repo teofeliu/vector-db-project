@@ -19,7 +19,7 @@ class VectorDBService:
         chunk_data['embedding'] = json.dumps(embedding)
         db_chunk = crud_chunk.create(db, obj_in=chunk_data)
         self.index.add(embedding, db_chunk.id)
-        print("chunk added to vector db")
+        print("chunk added to vector db:", embedding[:10], db_chunk.id)
         return db_chunk
 
     def get_chunk(self, db: Session, chunk_id: int):
@@ -35,11 +35,16 @@ class VectorDBService:
         return chunks[:limit]
 
     def search(self, db: Session, query_text: str, k: int = 5):
-        # Generate embedding for the query text
         query_vector = self.embedding_service.generate_embedding(query_text)
         results = self.index.search(query_vector, k)
         chunk_ids = [id for id, _ in results]
         chunks = crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
+        
+        # Ensure embeddings are stored as JSON strings
+        for chunk in chunks:
+            if isinstance(chunk.embedding, list):
+                chunk.embedding = json.dumps(chunk.embedding)
+        
         return chunks
 
     def rebuild_index(self, db: Session):
