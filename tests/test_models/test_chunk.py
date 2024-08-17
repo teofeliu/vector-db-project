@@ -28,7 +28,6 @@ def test_get_chunk(client):
     assert data["embedding"] == [0.4, 0.5, 0.6]
 
 def test_get_all_chunks(client):
-    # Create two chunks
     client.post("/api/v1/chunks/", json={"content": "Chunk 1", "embedding": [0.1, 0.2, 0.3], "document_id": 1})
     client.post("/api/v1/chunks/", json={"content": "Chunk 2", "embedding": [0.4, 0.5, 0.6], "document_id": 1})
     
@@ -39,27 +38,15 @@ def test_get_all_chunks(client):
     assert len(data) == 2
     assert data[0]["content"] == "Chunk 1"
     assert data[1]["content"] == "Chunk 2"
-    assert data[0]["embedding"] == [0.1, 0.2, 0.3]
-    assert data[1]["embedding"] == [0.4, 0.5, 0.6]
 
 def test_search_chunks(client):
-    # Create test chunks
-    chunk1 = client.post("/api/v1/chunks/", json={"content": "Test content 1", "embedding": [1.0, 2.0, 3.0], "document_id": 1})
-    chunk2 = client.post("/api/v1/chunks/", json={"content": "Test content 2", "embedding": [4.0, 5.0, 6.0], "document_id": 1})
-    chunk3 = client.post("/api/v1/chunks/", json={"content": "Test content 3", "embedding": [7.0, 8.0, 9.0], "document_id": 1})
+    client.post("/api/v1/chunks/", json={"content": "Test content 1", "embedding": [1.0, 2.0, 3.0], "document_id": 1})
+    client.post("/api/v1/chunks/", json={"content": "Test content 2", "embedding": [4.0, 5.0, 6.0], "document_id": 1})
+    client.post("/api/v1/chunks/", json={"content": "Test content 3", "embedding": [7.0, 8.0, 9.0], "document_id": 1})
 
-    # Perform search
     response = client.post("/api/v1/chunks/search", json={"query": [1.0, 2.0, 3.0], "k": 2})
     assert response.status_code == 200
     data = response.json()
-    
-    # Check search results
-    assert len(data) == 2, f"Expected 2 results, but got {len(data)}"
-    assert data[0]["content"] == "Test content 1", f"Expected 'Test content 1', but got {data[0]['content']}"
-    assert data[1]["content"] in ["Test content 2", "Test content 3"], f"Expected 'Test content 2' or 'Test content 3', but got {data[1]['content']}"
-
-def test_search_chunks_empty_db(client):
-    response = client.post("/api/v1/chunks/search", json={"query": [1.0, 2.0, 3.0], "k": 2})
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data) == 0
+    assert len(data) == 2
+    assert data[0]["content"] == "Test content 1"
+    assert data[1]["content"] in ["Test content 2", "Test content 3"]

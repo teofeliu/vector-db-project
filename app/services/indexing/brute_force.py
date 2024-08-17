@@ -18,6 +18,7 @@ class BruteForceIndex:
     def search(self, query: List[float], k: int) -> List[Tuple[int, float]]:
         query_vector = np.array(query)
         distances = [self.distance_func(v, query_vector) for v in self.vectors]
+        print("distances:", distances)
         indexed_distances = list(enumerate(distances))
         indexed_distances.sort(key=lambda x: x[1])
         result = []

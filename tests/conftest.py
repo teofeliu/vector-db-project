@@ -29,8 +29,12 @@ def db():
     return next(override_get_db())
 
 @pytest.fixture(scope="function")
-def client(db):
-    app.dependency_overrides[VectorDBService] = lambda: VectorDBService()
+def vector_db_service():
+    return VectorDBService()
+
+@pytest.fixture(scope="function")
+def client(db, vector_db_service):
+    app.dependency_overrides[VectorDBService] = lambda: vector_db_service
     
     def override_get_db():
         try:
@@ -44,6 +48,7 @@ def client(db):
         yield c
 
 @pytest.fixture(autouse=True)
-def clear_database(db):
+def clear_database(db, vector_db_service):
     db.query(Chunk).delete()
     db.commit()
+    vector_db_service.clear_index()
