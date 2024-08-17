@@ -6,6 +6,7 @@ from app.schemas.document import DocumentCreate, Document as DocumentSchema
 from app.services.document_processing import DocumentProcessingService
 from app.services.chunking import ChunkingService
 from app.services.vector_db import VectorDBService
+from app.core.dependencies import get_vector_db_service
 import io
 
 router = APIRouter()
@@ -17,14 +18,12 @@ async def create_document(
     library_id: int = Form(...),
     db: Session = Depends(get_db),
     chunking_service: ChunkingService = Depends(ChunkingService),
-    vector_db_service: VectorDBService = Depends(VectorDBService)
+    vector_db_service: VectorDBService = Depends(get_vector_db_service)
 ):
     try:
         content = await file.read()
         content = content.decode('utf-8')  # Preserve newlines
-        
         document = DocumentCreate(title=title, content=content, library_id=library_id)
-        
         document_processing_service = DocumentProcessingService(chunking_service, vector_db_service)
         return document_processing_service.process_document(db, document)
     except Exception as e:

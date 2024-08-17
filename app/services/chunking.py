@@ -4,11 +4,11 @@ from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
 from app.schemas.chunk import ChunkCreate
-from app.services.text_processing import TextProcessingService
+from app.services.embedding_service import EmbeddingService
 
 class ChunkingService:
     def __init__(self):
-        self.text_processor = TextProcessingService()
+        self.text_processor = EmbeddingService()
 
     def find_paragraph_end(self, tokens: List[int], start: int, end: int) -> int:
         # Look for newline tokens which often indicate paragraph breaks
@@ -55,7 +55,7 @@ class ChunkingService:
                 chunk_end = self.find_chunk_end(tokens, start)
                 if chunk_end <= start:
                     chunk_end = min(start + 500, len(tokens))
-                
+
                 padded_start = max(0, start - 50)
                 padded_end = min(len(tokens), chunk_end + 50)
                 chunk_tokens = tokens[padded_start:padded_end]
@@ -63,6 +63,7 @@ class ChunkingService:
                 chunk_text = self.text_processor.detokenize(chunk_tokens)
                 embedding = self.text_processor.generate_embedding(chunk_text)
                 
+                # Store embedding as a JSON string
                 embedding_json = json.dumps(embedding)
                 
                 chunk = ChunkCreate(
@@ -76,7 +77,6 @@ class ChunkingService:
                     }
                 )
                 chunks.append(chunk)
-                
                 start = chunk_end
 
             return chunks

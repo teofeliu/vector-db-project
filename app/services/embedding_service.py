@@ -1,9 +1,9 @@
-# app/services/text_processing.py
+# app/services/embedding_service.py
 import cohere
 from typing import List
 from app.core.config import settings
 
-class TextProcessingService:
+class EmbeddingService:
     def __init__(self):
         if settings.COHERE_API_KEY is None:
             raise ValueError("COHERE_API_KEY is not set in the environment")
