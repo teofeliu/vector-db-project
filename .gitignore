@@ -10,3 +10,4 @@ __pycache__/
 /app/schemas/README.md
 /app/db/README.md
 /app/services/README.mdtest.db
+test.db
