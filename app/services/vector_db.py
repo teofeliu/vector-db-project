@@ -40,8 +40,6 @@ class VectorDBService:
         results = self.index.search(query_vector, k)
         chunk_ids = [id for id, _ in results]
         chunks = crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
-        for chunk in chunks:
-            chunk.embedding = json.loads(chunk.embedding)
         return chunks
 
     def rebuild_index(self, db: Session):
