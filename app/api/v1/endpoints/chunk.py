@@ -10,7 +10,7 @@ from pydantic import BaseModel
 router = APIRouter()
 
 class SearchQuery(BaseModel):
-    query: List[float]
+    query: str
     k: int = 5
 
 @router.post("/", response_model=ChunkSchema)

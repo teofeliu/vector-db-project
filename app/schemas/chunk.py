@@ -1,11 +1,13 @@
+#app/schemas/chunk.py
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-from typing import List
+from typing import Optional, Dict, List
 import json
 
 class ChunkBase(BaseModel):
     content: str
-    embedding: List[float] = Field(..., description="Embedding as a list of floats")
+    embedding: str
     document_id: int
+    chunk_metadata: Optional[Dict] = None
 
 class ChunkCreate(ChunkBase):
     pass

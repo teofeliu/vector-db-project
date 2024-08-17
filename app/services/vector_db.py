@@ -1,13 +1,16 @@
+#app/services/vector_db.py
 from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
 from app.schemas.chunk import ChunkCreate, Chunk as ChunkSchema
 from app.models.chunk import Chunk
 from app.services.indexing.brute_force import BruteForceIndex
+from app.services.text_processing import TextProcessingService
 import json
 
 class VectorDBService:
     def __init__(self):
         self.index = BruteForceIndex()
+        self.text_processor = TextProcessingService()
 
     def add_chunk(self, db: Session, chunk_data: dict):
         db_chunk = crud_chunk.create(db, obj_in=chunk_data)
@@ -26,8 +29,9 @@ class VectorDBService:
             chunk.embedding = json.loads(chunk.embedding)
         return chunks[:limit]
 
-    def search(self, db: Session, query_vector: list, k: int = 5):
-        results = self.index.search(query_vector, k)
+    def search(self, db: Session, query_vector: str, k: int = 5):
+        tokenized_query = self.text_processor.tokenize(query_vector)
+        results = self.index.search(tokenized_query, k)
         chunk_ids = [id for id, _ in results]
         chunks = crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
         for chunk in chunks:

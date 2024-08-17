@@ -1,25 +1,14 @@
-#app/services/chunking.py
-import cohere
+# app/services/chunking.py
+import json
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
-from app.core.config import settings
+from app.schemas.chunk import ChunkCreate
+from app.services.text_processing import TextProcessingService
 
 class ChunkingService:
     def __init__(self):
-        if settings.COHERE_API_KEY is None:
-            raise ValueError("COHERE_API_KEY is not set in the environment")
-        self.co = cohere.Client(api_key=settings.COHERE_API_KEY)
-
-    def tokenize(self, text: str) -> List[int]:
-        return self.co.tokenize(text=text, model="command-r").tokens
-
-    def detokenize(self, tokens: List[int]) -> str:
-        return self.co.detokenize(tokens=tokens, model="command-r").text
-
-    def generate_embedding(self, text: str) -> List[float]:
-        response = self.co.embed(texts=[text], model="embed-english-v2.0")
-        return response.embeddings[0]
+        self.text_processor = TextProcessingService()
 
     def find_paragraph_end(self, tokens: List[int], start: int, end: int) -> int:
         # Look for newline tokens which often indicate paragraph breaks
@@ -57,44 +46,41 @@ class ChunkingService:
             return space
         return end  # If no suitable break point found, return the maximum end
 
-    def chunk_document(self, db: Session, document_id: int, text: str) -> List[Dict[str, Any]]:
-        tokens = self.tokenize(text)
-        chunks = []
-        start = 0
-        while start < len(tokens):
-            chunk_end = self.find_chunk_end(tokens, start)
-            if chunk_end <= start:
-                # Ensure we're always moving forward to prevent infinite loop
-                chunk_end = min(start + 500, len(tokens))
-            
-            padded_start = max(0, start - 50)
-            padded_end = min(len(tokens), chunk_end + 50)
-            chunk_tokens = tokens[padded_start:padded_end]
-            
-            # Detokenize to get the chunk text
-            chunk_text = self.detokenize(chunk_tokens)
-            
-            # Generate embedding
-            embedding = self.generate_embedding(chunk_text)
-            
-            # Create metadata
-            metadata = {
-                "start_index": padded_start,
-                "end_index": padded_end,
-                "length": padded_end - padded_start
-            }
-            
-            # Create and save Chunk object
-            chunk_data = {
-                "content": chunk_text,
-                "embedding": embedding,
-                "document_id": document_id,
-                "metadata": metadata
-            }
-            db_chunk = crud_chunk.create(db, obj_in=chunk_data)
-            chunks.append(db_chunk)
-            
-            # Move to next chunk
-            start = chunk_end
+    def chunk_document(self, document_id: int, text: str) -> List[ChunkCreate]:
+        try:
+            tokens = self.text_processor.tokenize(text)
+            chunks = []
+            start = 0
+            while start < len(tokens):
+                chunk_end = self.find_chunk_end(tokens, start)
+                if chunk_end <= start:
+                    chunk_end = min(start + 500, len(tokens))
+                
+                padded_start = max(0, start - 50)
+                padded_end = min(len(tokens), chunk_end + 50)
+                chunk_tokens = tokens[padded_start:padded_end]
+                
+                chunk_text = self.text_processor.detokenize(chunk_tokens)
+                embedding = self.text_processor.generate_embedding(chunk_text)
+                
+                embedding_json = json.dumps(embedding)
+                
+                chunk = ChunkCreate(
+                    content=chunk_text,
+                    embedding=embedding_json,  # Now a JSON string
+                    document_id=document_id,
+                    chunk_metadata={
+                        "start_index": padded_start,
+                        "end_index": padded_end,
+                        "length": padded_end - padded_start
+                    }
+                )
+                chunks.append(chunk)
+                
+                start = chunk_end
 
-        return chunks
+            return chunks
+        except Exception as e:
+            # Log the error and re-raise it
+            print(f"Error in chunk_document: {str(e)}")
+            raise

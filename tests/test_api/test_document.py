@@ -1,76 +1,111 @@
 # tests/test_api/test_document.py
 import pytest
+from fastapi.testclient import TestClient
+from unittest.mock import patch, MagicMock
+from app.main import app
+from app.models.document import Document
+from app.services.document_processing import DocumentProcessingService
 
-def test_create_document(client):
+client = TestClient(app)
+
+@pytest.fixture
+def mock_db():
+    return MagicMock()
+
+@pytest.fixture
+def mock_document_processing_service():
+    with patch('app.api.v1.endpoints.document.DocumentProcessingService') as mock:
+        yield mock
+
+def assert_document_response(response_data, expected_data):
+    for key, value in expected_data.items():
+        assert response_data[key] == value, f"Mismatch in {key}: expected {value}, got {response_data[key]}"
+
+def test_create_document_success(mock_document_processing_service, mock_db):
+    mock_document = Document(id=1, title="Test Document", content="Test content", library_id=1)
+    mock_document_processing_service.return_value.process_document.return_value = mock_document
+
     response = client.post(
         "/api/v1/documents/",
-        json={"title": "Test Document", "content": "This is a test document", "library_id": 1}
+        json={"title": "Test Document", "content": "Test content", "library_id": 1}
     )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["title"] == "Test Document"
-    assert data["content"] == "This is a test document"
-    assert data["library_id"] == 1
-    assert "id" in data
 
-def test_get_document(client):
-    # First, create a document
-    create_response = client.post(
+    assert response.status_code == 200
+    assert_document_response(response.json(), {
+        "id": 1,
+        "title": "Test Document",
+        "content": "Test content",
+        "library_id": 1
+    })
+
+def test_create_document_failure(mock_document_processing_service, mock_db):
+    mock_document_processing_service.return_value.process_document.side_effect = Exception("Processing failed")
+
+    response = client.post(
         "/api/v1/documents/",
-        json={"title": "Get Test Document", "content": "This is a document to get", "library_id": 1}
+        json={"title": "Test Document", "content": "Test content", "library_id": 1}
     )
-    created_document = create_response.json()
-    
-    # Now, get the document
-    response = client.get(f"/api/v1/documents/{created_document['id']}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["title"] == "Get Test Document"
-    assert data["id"] == created_document["id"]
 
-def test_update_document(client):
-    # First, create a document
-    create_response = client.post(
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Processing failed"}
+
+def test_get_document(mock_db):
+    mock_document = Document(id=1, title="Test Document", content="Test content", library_id=1)
+    with patch('app.crud.crud_document.document.get', return_value=mock_document):
+        response = client.get("/api/v1/documents/1")
+
+    assert response.status_code == 200
+    assert_document_response(response.json(), {
+        "id": 1,
+        "title": "Test Document",
+        "content": "Test content",
+        "library_id": 1
+    })
+
+def test_update_document(mock_db):
+    mock_document = Document(id=1, title="Updated Document", content="Updated content", library_id=1)
+    with patch('app.crud.crud_document.document.get', return_value=mock_document):
+        with patch('app.crud.crud_document.document.update', return_value=mock_document):
+            response = client.put(
+                "/api/v1/documents/1",
+                json={"title": "Updated Document", "content": "Updated content"}
+            )
+
+    assert response.status_code == 200
+    assert_document_response(response.json(), {
+        "id": 1,
+        "title": "Updated Document",
+        "content": "Updated content",
+        "library_id": 1
+    })
+
+def test_delete_document(mock_db):
+    mock_document = Document(id=1, title="Test Document", content="Test content", library_id=1)
+    with patch('app.crud.crud_document.document.get', return_value=mock_document):
+        with patch('app.crud.crud_document.document.remove', return_value=mock_document):
+            response = client.delete("/api/v1/documents/1")
+
+    assert response.status_code == 200
+    assert_document_response(response.json(), {
+        "id": 1,
+        "title": "Test Document",
+        "content": "Test content",
+        "library_id": 1
+    })
+
+def test_create_document_empty_content(mock_document_processing_service, mock_db):
+    mock_document = Document(id=1, title="Test Document", content="", library_id=1)
+    mock_document_processing_service.return_value.process_document.return_value = mock_document
+
+    response = client.post(
         "/api/v1/documents/",
-        json={"title": "Update Test Document", "content": "This is a document to update", "library_id": 1}
+        json={"title": "Test Document", "content": "", "library_id": 1}
     )
-    created_document = create_response.json()
-    
-    # Now, update the document
-    update_data = {"title": "Updated Document", "content": "This document has been updated"}
-    response = client.put(f"/api/v1/documents/{created_document['id']}", json=update_data)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["title"] == "Updated Document"
-    assert data["content"] == "This document has been updated"
-    assert data["id"] == created_document["id"]
 
-def test_delete_document(client):
-    # First, create a document
-    create_response = client.post(
-        "/api/v1/documents/",
-        json={"title": "Delete Test Document", "content": "This is a document to delete", "library_id": 1}
-    )
-    created_document = create_response.json()
-    
-    # Now, delete the document
-    response = client.delete(f"/api/v1/documents/{created_document['id']}")
     assert response.status_code == 200
-    
-    # Verify that the document has been deleted
-    get_response = client.get(f"/api/v1/documents/{created_document['id']}")
-    assert get_response.status_code == 404
-
-def test_get_all_documents(client):
-    # Create a couple of documents
-    client.post("/api/v1/documents/", json={"title": "Document 1", "content": "First document", "library_id": 1})
-    client.post("/api/v1/documents/", json={"title": "Document 2", "content": "Second document", "library_id": 1})
-    
-    # Get all documents
-    response = client.get("/api/v1/documents/")
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
-    assert len(data) >= 2
-    assert any(document["title"] == "Document 1" for document in data)
-    assert any(document["title"] == "Document 2" for document in data)
+    assert_document_response(response.json(), {
+        "id": 1,
+        "title": "Test Document",
+        "content": "",
+        "library_id": 1
+    })

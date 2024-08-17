@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+# app/models/chunk.py
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 import json
@@ -9,6 +10,7 @@ class Chunk(Base):
     content = Column(String)
     embedding = Column(String)  # Store as JSON string
     document_id = Column(Integer, ForeignKey("documents.id"))
+    chunk_metadata = Column(JSON)  # Add this line
     document = relationship("Document", back_populates="chunks")
 
     @property
