@@ -2,7 +2,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from app.main import app
+from main import app
 from app.models.document import Document
 from app.services.document_processing import DocumentProcessingService
 

@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from app.db.base import Base, get_db
-from app.main import app
+from main import app
 from app.services.vector_db import VectorDBService
 from app.models.chunk import Chunk
 

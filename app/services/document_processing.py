@@ -23,8 +23,8 @@ class DocumentProcessingService:
             
             # Add chunks to database and vector database
             for chunk_create in chunk_creates:
+                print("chunk pre:", type(chunk_create).__name__)
                 db_chunk = crud_chunk.create(db=db, obj_in=chunk_create)
-                self.vector_db_service.add_chunk(db, db_chunk)
             
             return db_document
         except Exception as e:

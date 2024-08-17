@@ -67,7 +67,7 @@ class ChunkingService:
                 
                 chunk = ChunkCreate(
                     content=chunk_text,
-                    embedding=embedding_json,  # Now a JSON string
+                    embedding=embedding_json,
                     document_id=document_id,
                     chunk_metadata={
                         "start_index": padded_start,
