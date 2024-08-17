@@ -31,4 +31,4 @@ def read_chunks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
 @router.post("/search", response_model=List[ChunkSchema])
 def search_chunks(search_query: SearchQuery, db: Session = Depends(get_db), vector_db_service: VectorDBService = Depends(VectorDBService)):
     results = vector_db_service.search(db, search_query.query, search_query.k)
-    return results  # This will return an empty list if no results are found
+    return results

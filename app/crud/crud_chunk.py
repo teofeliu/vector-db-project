@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.chunk import Chunk
 from app.schemas.chunk import ChunkCreate, ChunkUpdate
-from typing import List  # Add this import
+from typing import List
 import json
 
 class CRUDChunk:
@@ -22,13 +22,13 @@ class CRUDChunk:
     def get_multi(self, db: Session, *, skip: int = 0, limit: int = 100) -> List[Chunk]:
         chunks = db.query(Chunk).offset(skip).limit(limit).all()
         for chunk in chunks:
-            chunk.embedding = chunk.embedding_list
+            chunk.embedding = json.loads(chunk.embedding)
         return chunks
 
     def get_multi_by_ids(self, db: Session, *, ids: List[int]) -> List[Chunk]:
         chunks = db.query(Chunk).filter(Chunk.id.in_(ids)).all()
         for chunk in chunks:
-            chunk.embedding = chunk.embedding_list
+            chunk.embedding = json.loads(chunk.embedding)
         return chunks
 
 chunk = CRUDChunk()

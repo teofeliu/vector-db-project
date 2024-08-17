@@ -18,20 +18,24 @@ class VectorDBService:
     def get_chunk(self, db: Session, chunk_id: int):
         chunk = crud_chunk.get(db, id=chunk_id)
         if chunk:
-            chunk.embedding = chunk.embedding_list
+            chunk.embedding = json.loads(chunk.embedding)
         return chunk
 
     def get_chunks(self, db: Session, skip: int = 0, limit: int = 100):
         chunks = crud_chunk.get_multi(db, skip=skip, limit=limit)
-        return chunks  # crud_chunk.get_multi now handles the limit correctly
+        return chunks[:limit]
 
     def search(self, db: Session, query_vector: list, k: int = 5):
         results = self.index.search(query_vector, k)
         chunk_ids = [id for id, _ in results]
-        return crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
+        chunks = crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
+        # Ensure embeddings are loaded as lists
+        for chunk in chunks:
+            chunk.embedding = json.loads(chunk.embedding)
+        return chunks
 
     def rebuild_index(self, db: Session):
         chunks = crud_chunk.get_multi(db)
         self.index = BruteForceIndex()
         for chunk in chunks:
-            self.index.add(chunk.embedding_list, chunk.id)
+            self.index.add(json.loads(chunk.embedding), chunk.id)
