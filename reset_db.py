@@ -6,8 +6,9 @@ def reset_vector_index():
     index_path = settings.VECTOR_INDEX_PATH
     vector_file = os.path.join(index_path, "vectors.npy")
     metadata_file = os.path.join(index_path, "metadata.json")
+    hnsw_db = os.path.join(index_path, "hnsw_index.json")
 
-    files_to_remove = [vector_file, metadata_file]
+    files_to_remove = [vector_file, metadata_file, hnsw_db]
 
     for file in files_to_remove:
         if os.path.exists(file):

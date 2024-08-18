@@ -1,4 +1,3 @@
-# app/services/vector_db.py
 from typing import List, Tuple, Dict
 from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
@@ -22,7 +21,10 @@ class VectorDBService:
         embedding = self.embedding_service.generate_embedding(chunk_data['content'])
         chunk_data['embedding'] = json.dumps(embedding)
         db_chunk = crud_chunk.create(db, obj_in=chunk_data)
+        
+        # Add the embedding to the index immediately
         self.index.add(embedding, db_chunk.id)
+        
         return db_chunk
 
     def get_chunk(self, db: Session, chunk_id: int):
