@@ -42,7 +42,7 @@ def reset_main_database():
     cursor.execute("DELETE FROM chunks")
     cursor.execute("DELETE FROM documents")
     cursor.execute("DELETE FROM libraries")
-    cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('chunks', 'documents', 'libraries')")
+    #cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('chunks', 'documents', 'libraries')")
     conn.commit()
 
     print("\nRecords deleted.")
