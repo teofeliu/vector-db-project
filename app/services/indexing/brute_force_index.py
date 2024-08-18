@@ -8,7 +8,7 @@ from ..similarity import CosineSimilarity
 
 class BruteForceIndex(VectorIndex):
     def __init__(self, index_path: str):
-        print("BRUTE FORCE CHOSEN")
+        print("USING BRUTE FORCE INDEXING")
         self.index_path = index_path
         self.vector_file = os.path.join(index_path, "vectors.npy")
         self.metadata_file = os.path.join(index_path, "metadata.json")

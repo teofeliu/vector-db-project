@@ -14,13 +14,16 @@ class Node:
         self.neighbors: Dict[int, List[int]] = {}
 
     def add_neighbor(self, layer: int, neighbor_id: int):
+        # make sure we have a list for this layer
         if layer not in self.neighbors:
             self.neighbors[layer] = []
+        # avoid duplicate neighbors
         if neighbor_id not in self.neighbors[layer]:
             self.neighbors[layer].append(neighbor_id)
             print(f"Added neighbor {neighbor_id} to node {self.id} at layer {layer}")
 
     def get_neighbors(self, layer: int) -> List[int]:
+        # return an empty list if layer doesn't exist
         return self.neighbors.get(layer, [])
 
 class HNSWIndex(VectorIndex):
@@ -36,12 +39,14 @@ class HNSWIndex(VectorIndex):
         print(f"Initializing HNSWIndex with M={M}, ef_construction={ef_construction}, ml={ml}")
         self.load()
 
+    # adds new vector to the index
     def add(self, vector: List[float], id: int) -> None:
         print(f"Adding vector with id {id} to the index")
         vector = np.array(vector, dtype=np.float32)
         node = Node(id, vector)
         self.nodes[id] = node
         
+        # special case for the first node
         if self.enter_point is None:
             print(f"First node added. Setting enter_point to {id}")
             self.enter_point = id
@@ -58,6 +63,7 @@ class HNSWIndex(VectorIndex):
             self._insert_node(node, level)
         self.save()
 
+    # performs a search query on the index
     def search(self, query: List[float], k: int) -> List[Tuple[int, float]]:
         print(f"Searching for {k} nearest neighbors")
         query = np.array(query, dtype=np.float32)
@@ -69,6 +75,7 @@ class HNSWIndex(VectorIndex):
         current_layer = self.max_level
         current_nearest = enter_point
 
+        # traverse down the layers
         while current_layer > 0:
             print(f"Searching at layer {current_layer}")
             changed = True
@@ -92,6 +99,7 @@ class HNSWIndex(VectorIndex):
         print(f"Search completed. Found {len(results)} results.")
         return sorted(results, key=lambda x: x[1], reverse=True)
 
+    # rebuilds the entire index from scratch
     def rebuild(self, vectors: List[List[float]], ids: List[int]) -> None:
         print(f"Rebuilding index with {len(vectors)} vectors")
         self.nodes.clear()
@@ -101,6 +109,7 @@ class HNSWIndex(VectorIndex):
             self.add(vector, id)
         print("Index rebuild completed")
 
+    # saves the current state of the index to disk
     def save(self) -> None:
         print(f"Saving index to {self.index_path}")
         data = {
@@ -117,6 +126,7 @@ class HNSWIndex(VectorIndex):
             json.dump(data, f)
         print("Index saved successfully")
 
+    # loads the index state from disk
     def load(self) -> None:
         index_file = os.path.join(self.index_path, "hnsw_index.json")
         if os.path.exists(index_file):
@@ -137,19 +147,23 @@ class HNSWIndex(VectorIndex):
         else:
             print(f"No existing index found at {index_file}")
 
+    # generates a random level for a new node
     def _random_level(self) -> int:
         return min(int(-np.log(np.random.uniform()) * self.M), 
                 int(np.log2(len(self.nodes) + 1)))
 
+    # inserts a new node into the index
     def _insert_node(self, node: Node, level: int) -> None:
         print(f"Inserting node {node.id} at level {level}")
         enter_point = self.nodes[self.enter_point]
         
+        # insert node at each layer from top to bottom
         for l in range(min(self.max_level, level), -1, -1):
             print(f"Inserting at layer {l}")
             neighbors = self._search_layer(enter_point, node.vector, l, self.ef_construction)
             neighbors = self._select_neighbors(node, neighbors, self.M, l)
             
+            # create bidirectional connections
             for neighbor in neighbors:
                 node.add_neighbor(l, neighbor.id)
                 neighbor.add_neighbor(l, node.id)
@@ -158,6 +172,7 @@ class HNSWIndex(VectorIndex):
                 enter_point = neighbors[0]
         print(f"Node {node.id} inserted successfully")
 
+    # searches for nearest neighbors within a layer
     def _search_layer(self, entry_point: Node, query: np.ndarray, layer: int, ef: int) -> List[Node]:
         print(f"Searching layer {layer} with ef={ef}")
         visited = set()
@@ -173,6 +188,7 @@ class HNSWIndex(VectorIndex):
             _, current = candidates.get()
             furthest_similarity, _ = results.queue[0]
             
+            # early stopping if we can't improve results
             if self.similarity.calculate(current.vector, query) < furthest_similarity:
                 break
             
@@ -190,6 +206,7 @@ class HNSWIndex(VectorIndex):
         print(f"Layer search completed. Found {results.qsize()} candidates")
         return [node for _, node in sorted(results.queue, key=lambda x: -x[0])]
 
+    # selects the best neighbors for a node
     def _select_neighbors(self, node: Node, candidates: List[Node], M: int, layer: int) -> List[Node]:
         selected = sorted(candidates, key=lambda x: self.similarity.calculate(node.vector, x.vector), reverse=True)[:M]
         print(f"Selected {len(selected)} neighbors for node {node.id} at layer {layer}")
