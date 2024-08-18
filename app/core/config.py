@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     TESTING: bool = False
     COHERE_API_KEY: Optional[str] = None
     VECTOR_INDEX_PATH: str = "./vector_index"
-    VECTOR_INDEX: IndexSettings = IndexSettings(type="brute_force")
+    VECTOR_INDEX: IndexSettings = IndexSettings(type="brute force")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

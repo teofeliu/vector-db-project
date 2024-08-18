@@ -19,7 +19,6 @@ class VectorDBService:
         self.embedding_service = EmbeddingService()
 
     def add_chunk(self, db: Session, chunk_data: dict):
-        # Generate embedding for the chunk content
         embedding = self.embedding_service.generate_embedding(chunk_data['content'])
         chunk_data['embedding'] = json.dumps(embedding)
         db_chunk = crud_chunk.create(db, obj_in=chunk_data)

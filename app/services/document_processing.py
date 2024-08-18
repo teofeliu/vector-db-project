@@ -14,20 +14,19 @@ class DocumentProcessingService:
 
     def process_document(self, db: Session, document: DocumentCreate) -> Document:
         try:
-            # Create the document
+            # create document
             db_document = crud_document.create(db=db, obj_in=document)
 
-            # Chunk the document
+            # chunk document
             chunk_creates = self.chunking_service.chunk_document(db_document.id, db_document.content)
 
-            # Add chunks to database and vector database
+            # add chunks to database and vector database
             for chunk_create in chunk_creates:
                 chunk_data = chunk_create.model_dump()
-                # The embedding is already a JSON string, so we don't need to dump it again
+                # embedding already a json string so no need to dump
                 self.vector_db_service.add_chunk(db, chunk_data)
 
             return db_document
         except Exception as e:
-            # Log the error here
             print(f"Error processing document: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")

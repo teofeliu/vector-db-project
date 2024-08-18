@@ -8,7 +8,7 @@ class Document(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    content = Column(Text)  # Add this line to include document content
+    content = Column(Text)
     document_metadata = Column(JSON)
     library_id = Column(Integer, ForeignKey("libraries.id"))
     

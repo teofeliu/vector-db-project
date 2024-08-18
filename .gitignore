@@ -11,3 +11,4 @@ __pycache__/
 /app/db/README.md
 /app/services/README.mdtest.db
 test.db
+/app/services/indexing/ivf_index.py

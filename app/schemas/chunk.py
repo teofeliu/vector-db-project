@@ -7,14 +7,14 @@ class ChunkBase(BaseModel):
     chunk_metadata: Optional[Dict] = None
 
 class ChunkCreate(ChunkBase):
-    embedding: str  # Keep this for creation, but it won't be in the response
+    embedding: str 
 
 class ChunkUpdate(ChunkBase):
     pass
 
 class ChunkInDB(ChunkBase):
     id: int
-    embedding: str  # This is in the database, but won't be in the API response
+    embedding: str
     model_config = ConfigDict(from_attributes=True)
 
 class ChunkResponse(ChunkBase):
