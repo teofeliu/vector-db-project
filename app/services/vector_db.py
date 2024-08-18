@@ -4,13 +4,18 @@ from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
 from app.schemas.chunk import ChunkCreate, ChunkResponse
 from app.models.chunk import Chunk
-from app.services.indexing.disk_based_vector_index import DiskBasedVectorIndex
+from .indexing.factory import VectorIndexFactory
+from app.core.config import settings
 from app.services.embedding_service import EmbeddingService
 import json
 
 class VectorDBService:
-    def __init__(self, index_path: str):
-        self.index = DiskBasedVectorIndex(index_path)
+    def __init__(self):
+        self.index = VectorIndexFactory.create(
+            index_type=settings.VECTOR_INDEX.type,
+            index_path=settings.VECTOR_INDEX_PATH,
+            **settings.VECTOR_INDEX.params
+        )
         self.embedding_service = EmbeddingService()
 
     def add_chunk(self, db: Session, chunk_data: dict):
@@ -38,13 +43,11 @@ class VectorDBService:
         results = self.index.search(query_vector, k)
         chunk_ids = [id for id, _ in results]
         similarities = [similarity for _, similarity in results]
-        
         chunks = crud_chunk.get_multi_by_ids(db, ids=chunk_ids)
-        
         chunk_responses = []
         for chunk, similarity in zip(chunks, similarities):
-            if isinstance(chunk.embedding, list):
-                chunk.embedding = json.dumps(chunk.embedding)
+            if isinstance(chunk.embedding, str):
+                chunk.embedding = json.loads(chunk.embedding)
             chunk_response = ChunkResponse(
                 id=chunk.id,
                 content=chunk.content,
@@ -53,12 +56,11 @@ class VectorDBService:
                 similarity=similarity
             )
             chunk_responses.append(chunk_response)
-        
         return chunk_responses
 
     def rebuild_index(self, db: Session):
         chunks = crud_chunk.get_multi(db)
-        vectors = [json.loads(chunk.embedding) for chunk in chunks]
+        vectors = [json.loads(chunk.embedding) if isinstance(chunk.embedding, str) else chunk.embedding for chunk in chunks]
         ids = [chunk.id for chunk in chunks]
         self.index.rebuild(vectors, ids)
 
@@ -68,7 +70,7 @@ class VectorDBService:
             chunks = crud_chunk.get_multi(db, skip=offset, limit=batch_size)
             if not chunks:
                 break
-            vectors = [json.loads(chunk.embedding) for chunk in chunks]
+            vectors = [json.loads(chunk.embedding) if isinstance(chunk.embedding, str) else chunk.embedding for chunk in chunks]
             ids = [chunk.id for chunk in chunks]
             if offset == 0:
                 self.index.rebuild(vectors, ids)

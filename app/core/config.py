@@ -1,6 +1,10 @@
 # app/core/config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from typing import Optional, Dict, Any
+
+class IndexSettings(BaseSettings):
+    type: str
+    params: Dict[str, Any] = {}
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./test.db"
@@ -8,6 +12,7 @@ class Settings(BaseSettings):
     TESTING: bool = False
     COHERE_API_KEY: Optional[str] = None
     VECTOR_INDEX_PATH: str = "./vector_index"
+    VECTOR_INDEX: IndexSettings = IndexSettings(type="brute_force")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
