@@ -8,9 +8,9 @@ class Chunk(Base):
     __tablename__ = "chunks"
     id = Column(Integer, primary_key=True, index=True)
     content = Column(String)
-    embedding = Column(String)  # Store as JSON string
+    embedding = Column(String)  # as json
     document_id = Column(Integer, ForeignKey("documents.id"))
-    chunk_metadata = Column(JSON)  # Add this line
+    chunk_metadata = Column(JSON)  # json
     document = relationship("Document", back_populates="chunks")
 
     @property
