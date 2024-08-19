@@ -35,6 +35,20 @@ Key settings can be adjusted in `app/core/config.py`, including:
 - Similarity measure selection
 - Embedding model selection
 
+## Automatic Document Chunking
+
+The system employs an intelligent chunking algorithm to divide documents into meaningful segments:
+
+1. Documents are first tokenized using the Cohere tokenizer.
+2. Chunks are created within a specified token range (e.g., 70-130 tokens), configurable in settings.
+3. The algorithm starts at the maximum token limit and backtrack to find natural break points:
+   - First, it looks for paragraph breaks (\n).
+   - If no paragraph break is found, it searches for sentence endings.
+   - If no sentence end is found, it finds the nearest space.
+4. Optionally, chunk padding can be applied to include additional context before and after each chunk.
+
+This approach ensures that chunks maintain semantic coherence while adhering to size constraints, enhancing the quality of vector representations and search results.
+
 ## Indexing Algorithms
 
 ### Brute Force
