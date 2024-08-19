@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     MIN_CHUNK_SIZE: int = 50
     MAX_CHUNK_SIZE: int = 100
     CHUNK_PADDING: int = 0
+
+    # Embedding model
+    EMBEDDING_MODEL: str = "embed-english-v2.0"
     
     # Vector search parameters
     DEFAULT_SEARCH_RESULTS: int = 5
@@ -27,7 +30,11 @@ class Settings(BaseSettings):
     # Index rebuilding
     INDEX_REBUILD_BATCH_SIZE: int = 1000
     
-    # Embedding model
-    EMBEDDING_MODEL: str = "embed-english-v2.0"
+    # HNSW Index parameters
+    HNSW_M: int = 16
+    HNSW_EF_CONSTRUCTION: int = 200
+    HNSW_ML: int = 16
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = Settings()
