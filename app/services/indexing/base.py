@@ -1,8 +1,12 @@
 # app/services/indexing/base.py
 from abc import ABC, abstractmethod
 from typing import List, Tuple
+from app.services.similarity import SimilarityMeasure
 
 class VectorIndex(ABC):
+    def __init__(self, similarity_measure: SimilarityMeasure):
+        self.similarity_measure = similarity_measure
+
     @abstractmethod
     def add(self, vector: List[float], id: int) -> None:
         pass

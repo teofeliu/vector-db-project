@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     HNSW_EF_CONSTRUCTION: int = 200
     HNSW_ML: int = 16
 
+    SIMILARITY_MEASURE: str = "dot_product"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = Settings()

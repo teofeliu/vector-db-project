@@ -4,15 +4,15 @@ import os
 import json
 from typing import List, Tuple
 from .base import VectorIndex
-from ..similarity import CosineSimilarity
+from app.services.similarity import SimilarityMeasure
 
 class BruteForceIndex(VectorIndex):
-    def __init__(self, index_path: str):
+    def __init__(self, index_path: str, similarity_measure: SimilarityMeasure):
         print("USING BRUTE FORCE INDEXING")
         self.index_path = index_path
         self.vector_file = os.path.join(index_path, "vectors.npy")
         self.metadata_file = os.path.join(index_path, "metadata.json")
-        self.similarity = CosineSimilarity()
+        self.similarity = similarity_measure
         self.vectors = np.array([], dtype=np.float32).reshape(0, 0)
         self.metadata = {"ids": [], "dimensions": 0}
         self.load()

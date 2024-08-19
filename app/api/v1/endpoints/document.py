@@ -7,6 +7,7 @@ from app.services.document_processing import DocumentProcessingService
 from app.services.chunking import ChunkingService
 from app.services.vector_db import VectorDBService
 from app.core.dependencies import get_vector_db_service
+from app.crud.crud_document import document as crud_document
 import io
 
 router = APIRouter()
@@ -28,3 +29,10 @@ async def create_document(
         return document_processing_service.process_document(db, document)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{document_id}", response_model=DocumentSchema)
+def read_document(document_id: int, db: Session = Depends(get_db)):
+    db_document = crud_document.get(db, id=document_id)
+    if db_document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return db_document

@@ -1,3 +1,4 @@
+# app/services/vector_db.py
 from typing import List, Tuple, Dict
 from sqlalchemy.orm import Session
 from app.crud.crud_chunk import chunk as crud_chunk
@@ -6,13 +7,16 @@ from app.models.chunk import Chunk
 from .indexing.factory import VectorIndexFactory
 from app.core.config import settings
 from app.services.embedding_service import EmbeddingService
+from app.services.similarity import get_similarity_measure
 import json
 
 class VectorDBService:
     def __init__(self):
+        self.similarity_measure = get_similarity_measure()
         self.index = VectorIndexFactory.create(
             index_type=settings.VECTOR_INDEX.type,
             index_path=settings.VECTOR_INDEX_PATH,
+            similarity_measure=self.similarity_measure,
             **settings.VECTOR_INDEX.params
         )
         self.embedding_service = EmbeddingService()

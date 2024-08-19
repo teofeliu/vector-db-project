@@ -7,18 +7,19 @@ from .index_io import IndexIO
 from .layer_search import LayerSearch
 from .node_insertion import NodeInsertion
 from .utils import random_level
-from app.services.similarity import CosineSimilarity
+from app.services.similarity import SimilarityMeasure
 
-class HNSWIndex:
-    def __init__(self, index_path: str, config: HNSWConfig):
+class HNSWIndex():
+    def __init__(self, index_path: str, similarity_measure: SimilarityMeasure, config: HNSWConfig):
         self.config = config
         self.nodes: Dict[int, Node] = {}
         self.enter_point: int = None
         self.max_level: int = -1
-        self.similarity = CosineSimilarity()
+        self.similarity = similarity_measure
         self.index_io = IndexIO(index_path)
         self.layer_search = LayerSearch(self.nodes, self.similarity)
         self.node_insertion = NodeInsertion(self.nodes, self.similarity, self.config)
+        print(f"Initializing HNSWIndex with M={self.config.M}, ef_construction={self.config.ef_construction}, ml={self.config.ml}")
         self.index_io.load(self)
 
     def add(self, vector: List[float], id: int) -> None:
