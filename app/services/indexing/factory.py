@@ -2,7 +2,6 @@
 from typing import Dict, Any
 from app.services.indexing.base import VectorIndex
 from app.services.indexing.brute_force_index import BruteForceIndex
-from app.services.indexing.ivf_index import IVFIndex
 from app.services.indexing.hnsw_index.hnsw_index import HNSWIndex
 from app.services.indexing.hnsw_index.config import HNSWConfig
 from app.core.config import settings
@@ -15,9 +14,6 @@ class VectorIndexFactory:
         
         if index_type == "brute_force":
             return BruteForceIndex(index_path=index_path, similarity_measure=similarity_measure)
-        elif index_type == "ivf":
-            n_clusters = kwargs.get('n_clusters', settings.IVF_N_CLUSTERS)
-            return IVFIndex(index_path=index_path, n_clusters=n_clusters, similarity_measure=similarity_measure)
         elif index_type == "hnsw":
             hnsw_config = HNSWConfig.from_settings()
             return HNSWIndex(index_path=index_path, config=hnsw_config, similarity_measure=similarity_measure)

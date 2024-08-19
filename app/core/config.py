@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     TESTING: bool = False
     COHERE_API_KEY: Optional[str] = None
     VECTOR_INDEX_PATH: str = "./vector_index"
-    VECTOR_INDEX: IndexSettings = IndexSettings(type="hnsw")
+    VECTOR_INDEX: IndexSettings = IndexSettings(type="hnsw") # hnsw or brute_force
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     HNSW_EF_CONSTRUCTION: int = 200
     HNSW_ML: int = 16
 
-    SIMILARITY_MEASURE: str = "cosine"
+    SIMILARITY_MEASURE: str = "cosine" # cosine, dot_product, euclidean
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
