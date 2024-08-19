@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     # Chunking parameters
-    MIN_CHUNK_SIZE: int = 50
-    MAX_CHUNK_SIZE: int = 100
+    MIN_CHUNK_SIZE: int = 70
+    MAX_CHUNK_SIZE: int = 130
     CHUNK_PADDING: int = 0
 
     # Embedding model
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     HNSW_EF_CONSTRUCTION: int = 200
     HNSW_ML: int = 16
 
-    SIMILARITY_MEASURE: str = "dot_product"
+    SIMILARITY_MEASURE: str = "cosine"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
