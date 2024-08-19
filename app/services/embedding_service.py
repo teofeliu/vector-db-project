@@ -3,7 +3,7 @@ import cohere
 from typing import List
 from app.core.config import settings
 import time
-from cohere.errors import CohereError
+import requests
 
 class EmbeddingService:
     def __init__(self):
@@ -23,7 +23,7 @@ class EmbeddingService:
                 response = self.co.embed(texts=[text], model=settings.EMBEDDING_MODEL)
                 return response.embeddings[0]
             # very rarely the cohere call returns an error. this tries again once if that happens
-            except CohereError as e:
+            except (cohere.CohereError, requests.RequestException) as e:
                 if attempt < max_retries:
                     print(f"Cohere API error: {str(e)}. Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
